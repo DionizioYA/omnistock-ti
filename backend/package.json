@@ -1,0 +1,64 @@
+{
+  "name": "omnistock-backend",
+  "version": "1.0.0",
+  "description": "Back-end completo para o OmniStock ERP - Sistema Web Moderno e Responsivo de Controle de Estoque (React, Express, PostgreSQL, Prisma, JWT)",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:reset": "prisma db push --force-reset && npm run db:seed",
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "import:ti-stock": "ts-node src/scripts/importInitialStock.ts"
+  },
+  "keywords": [
+    "controle-de-estoque",
+    "erp",
+    "inventory",
+    "jwt",
+    "express",
+    "prisma",
+    "postgresql",
+    "sqlite"
+  ],
+  "author": "Antigravity & Ydionizio - OmniStock",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "bcryptjs": "^2.4.3",
+    "bwip-js": "^4.5.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "pdfkit": "^0.15.0",
+    "qrcode": "^1.5.3",
+    "swagger-ui-express": "^5.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/bwip-js": "^3.2.3",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.14.0",
+    "@types/pdfkit": "^0.13.4",
+    "@types/qrcode": "^1.5.6",
+    "@types/swagger-ui-express": "^4.1.6",
+    "prisma": "^5.14.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
+}

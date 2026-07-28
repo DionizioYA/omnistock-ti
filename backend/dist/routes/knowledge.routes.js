@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const KnowledgeController_1 = require("../controllers/KnowledgeController");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const rbac_middleware_1 = require("../middlewares/rbac.middleware");
+const router = (0, express_1.Router)();
+const controller = new KnowledgeController_1.KnowledgeController();
+router.use(auth_middleware_1.authMiddleware);
+router.get('/', controller.list.bind(controller));
+router.get('/:id', controller.getById.bind(controller));
+router.post('/', (0, rbac_middleware_1.requireRole)('ADMIN', 'COORDINATOR', 'TECHNICIAN'), controller.create.bind(controller));
+router.patch('/:id/helpful', controller.markHelpful.bind(controller));
+exports.default = router;

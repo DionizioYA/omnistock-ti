@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const InventoryController_1 = require("../controllers/InventoryController");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const rbac_middleware_1 = require("../middlewares/rbac.middleware");
+const router = (0, express_1.Router)();
+const controller = new InventoryController_1.InventoryController();
+router.use(auth_middleware_1.authMiddleware);
+router.get('/', controller.list.bind(controller));
+router.get('/:id', controller.getById.bind(controller));
+router.post('/', (0, rbac_middleware_1.requireRole)('ADMIN', 'COORDINATOR', 'TECHNICIAN'), controller.create.bind(controller));
+router.post('/:id/move', (0, rbac_middleware_1.requireRole)('ADMIN', 'COORDINATOR', 'TECHNICIAN'), controller.move.bind(controller));
+exports.default = router;

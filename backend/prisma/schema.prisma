@@ -1,0 +1,216 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String           @id @default(uuid())
+  name         String
+  email        String           @unique
+  passwordHash String
+  role         String           @default("CONSULTA") // ADMIN, TECNICO, CONSULTA
+  avatarUrl    String?
+  department   String?
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  movements        StockMovement[]
+  inventoryAudits  InventoryAudit[]
+  auditLogs        AuditLog[]
+  createdAlerts    Alert[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  icon        String?    @default("folder")
+  color       String?    @default("#3B82F6")
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Supplier {
+  id           String    @id @default(uuid())
+  razaoSocial  String
+  nomeFantasia String
+  cnpj         String    @unique
+  telefone     String?
+  email        String?
+  endereco     String?
+  contato      String?
+  observacoes  String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  products Product[]
+
+  @@map("suppliers")
+}
+
+model Product {
+  id            String    @id @default(uuid())
+  code          String    @unique // Código interno
+  barcode       String?   @unique // Código de barras
+  name          String
+  description   String?
+  categoryId    String
+  category      Category  @relation(fields: [categoryId], references: [id])
+  brand         String?   // Marca
+  model         String?   // Modelo
+  unit          String    @default("UN") // Unidade de medida (UN, KG, CX, LT, M)
+  location      String?   // Localização no estoque (Prateleira/Corredor)
+  minStock      Int       @default(5)
+  maxStock      Int       @default(100)
+  currentStock  Int       @default(0)
+  purchasePrice Float     @default(0.0)
+  salesPrice    Float     @default(0.0)
+  supplierId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  expiryDate    DateTime? // Data de validade
+  serialNumber  String?   // Número de série
+  patrimony     String?   // Patrimônio
+  photoUrl      String?   // Foto do produto
+  observations  String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  movements      StockMovement[]
+  inventoryItems InventoryAuditItem[]
+  alerts         Alert[]
+  attachments    Attachment[]
+  loans          Loan[]
+
+  @@map("products")
+}
+
+model StockMovement {
+  id                  String       @id @default(uuid())
+  type                String       // ENTRADA, SAIDA, EMPRESTIMO, DEVOLUCAO, BAIXA
+  productId           String
+  product             Product      @relation(fields: [productId], references: [id])
+  quantity            Int
+  previousStock       Int
+  newStock            Int
+  userId              String
+  user                User         @relation(fields: [userId], references: [id])
+  datetime            DateTime     @default(now())
+  reason              String
+  documentFiscal      String?      // Documento fiscal (Nota fiscal, recibo)
+  observation         String?
+  originLocation      String?
+  destinationLocation String?
+
+  @@map("stock_movements")
+}
+
+model InventoryAudit {
+  id          String          @id @default(uuid())
+  code        String          @unique // Ex: INV-2026-0001
+  title       String
+  type        String          @default("GERAL") // GERAL, POR_CATEGORIA, POR_LOCALIZACAO
+  targetFilter String?        // Ex: id da categoria ou nome do local
+  status      String          @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, CANCELLED
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  notes       String?
+  startedAt   DateTime        @default(now())
+  completedAt DateTime?
+
+  items InventoryAuditItem[]
+
+  @@map("inventory_audits")
+}
+
+model InventoryAuditItem {
+  id             String         @id @default(uuid())
+  auditId        String
+  audit          InventoryAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product        @relation(fields: [productId], references: [id])
+  systemQuantity Int
+  physicalCount  Int?
+  divergence     Int?           // physicalCount - systemQuantity
+  isAdjusted     Boolean        @default(false)
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([auditId, productId])
+  @@map("inventory_audit_items")
+}
+
+model Alert {
+  id          String    @id @default(uuid())
+  type        String    // LOW_STOCK, EXPIRING_SOON, STALE_STOCK, ZERO_STOCK, DUPLICATE_PRODUCT
+  productId   String?
+  product     Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  isRead      Boolean   @default(false)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+
+  @@map("alerts")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String   // LOGIN, LOGOUT, CREATE, UPDATE, LOGICAL_DELETE, MOVEMENT, INVENTORY
+  entity     String   // Product, Category, Supplier, StockMovement, User, etc.
+  entityId   String?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ipAddress  String?
+  details    String?  // JSON text with old/new values
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model Attachment {
+  id          String   @id @default(uuid())
+  filename    String
+  url         String
+  fileType    String?
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@map("attachments")
+}
+
+model Loan {
+  id                 String    @id @default(uuid())
+  userName           String    // Usuário / Solicitante (colaborador que pegou emprestado)
+  department         String    // Setor do colaborador
+  equipmentName      String    // Nome do equipamento
+  productId          String
+  product            Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  patrimony          String?   // Número de patrimônio
+  loanDate           DateTime  @default(now()) // Data do empréstimo
+  expectedReturnDate DateTime  // Data prevista para devolução
+  returnDate         DateTime? // Data da devolução (nulo se ainda emprestado)
+  deliveredBy        String    // Técnico responsável pela entrega
+  status             String    @default("ACTIVE") // ACTIVE, RETURNED, OVERDUE
+  notes              String?   // Observações
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("loans")
+}

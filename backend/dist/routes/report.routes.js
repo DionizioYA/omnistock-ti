@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const ReportController_1 = require("../controllers/ReportController");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const rbac_middleware_1 = require("../middlewares/rbac.middleware");
+const router = (0, express_1.Router)();
+const controller = new ReportController_1.ReportController();
+router.use(auth_middleware_1.authMiddleware);
+router.use((0, rbac_middleware_1.requireRole)('ADMIN', 'COORDINATOR', 'TECHNICIAN'));
+router.get('/tickets', controller.getTicketsReport.bind(controller));
+router.get('/inventory', controller.getInventoryReport.bind(controller));
+router.get('/audit', controller.getAuditLogsReport.bind(controller));
+exports.default = router;
