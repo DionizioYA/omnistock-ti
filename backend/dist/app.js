@@ -18,7 +18,7 @@ const createApp = (prisma) => {
     app.use((0, cors_1.default)({
         origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization']
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Role', 'x-user-role']
     }));
     app.use(express_1.default.json({ limit: '25mb' }));
     app.use(express_1.default.urlencoded({ extended: true, limit: '25mb' }));

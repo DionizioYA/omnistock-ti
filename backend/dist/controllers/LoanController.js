@@ -2,6 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoanController = void 0;
 const schemas_1 = require("../domain/schemas");
+const client_1 = require("@prisma/client");
+const prismaHelper = new client_1.PrismaClient();
+const getValidUserId = async (reqUser) => {
+    if (reqUser && reqUser.id && reqUser.id !== 'admin' && reqUser.id !== 'default-user-id') {
+        return reqUser.id;
+    }
+    const u = await prismaHelper.user.findFirst();
+    return u?.id || '';
+};
 class LoanController {
     loanRepo;
     productRepo;
@@ -70,14 +79,14 @@ class LoanController {
             // Subtrai do estoque e registra movimentação
             const newStock = product.currentStock - 1;
             await this.productRepo.updateStock(product.id, newStock);
-            const userId = req.user?.id || product.id; // Fallback se não autenticado para facilidade de teste
+            const validId = await getValidUserId(req.user);
             await this.movementRepo.create({
                 type: 'EMPRESTIMO',
                 productId: product.id,
                 quantity: 1,
                 previousStock: product.currentStock,
                 newStock,
-                userId: req.user?.id || 'admin',
+                userId: validId,
                 reason: `Empréstimo para ${data.userName} (${data.department}) - Entregue por ${data.deliveredBy}`,
                 observation: data.notes || `Patrimônio: ${data.patrimony || product.patrimony || 'N/A'}`
             });
@@ -109,13 +118,14 @@ class LoanController {
             });
             if (product) {
                 await this.productRepo.updateStock(product.id, newStock);
+                const validId = await getValidUserId(req.user);
                 await this.movementRepo.create({
                     type: 'DEVOLUCAO',
                     productId: product.id,
                     quantity: 1,
                     previousStock: prevStock,
                     newStock,
-                    userId: req.user?.id || 'admin',
+                    userId: validId,
                     reason: `Devolução de equipamento - ${loan.userName} (${loan.department})`,
                     observation: `Recebido no Service Desk.`
                 });
